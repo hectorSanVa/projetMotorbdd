@@ -71,8 +71,8 @@ OPERACIONES CRUD
 
   AGREGAR <tabla> <clave> <valor>
   
-    EJEMPLO: agregar usuarios juan 21
-    RESULTADO: Agrega a tabla "usuarios" clave "juan" con valor 21
+    EJEMPLO: agregar usuarios pepito 21
+    RESULTADO: Agrega a tabla "usuarios" clave "pepito" con valor 21
   
   VER <tabla>
   
@@ -81,13 +81,13 @@ OPERACIONES CRUD
   
   MODIFICAR <tabla> <clave> <nuevo_valor>
   
-    EJEMPLO: modificar usuarios juan 25
-    RESULTADO: Cambia valor de juan de 21 a 25
+    EJEMPLO: modificar usuarios pepito 25
+    RESULTADO: Cambia valor de pepito de 21 a 25
   
   BORRAR <tabla> <clave>
   
-    EJEMPLO: borrar usuarios juan
-    RESULTADO: Elimina el registro "juan"
+    EJEMPLO: borrar usuarios pepito
+    RESULTADO: Elimina el registro "pepito"
 
 
 TRANSACCIONES (ACID)

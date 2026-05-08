@@ -21,10 +21,9 @@ typedef struct {
     int backup_size;
 } BufferTransaccion;
 
-extern BufferTransaccion txn_buffer;
-
 void txn_iniciar();
 void txn_agregar_cambio(char op, const char *tabla, const char *clave, int valor);
+void txn_agregar_cambio_sesion(BufferTransaccion *txn, char op, const char *tabla, const char *clave, int valor);
 int txn_guardar();
 int txn_cancelar();
 int txn_activa();

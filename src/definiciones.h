@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #define MAX_LINEA 256
 #define MAX_CAMPO 64

@@ -91,7 +91,7 @@ Luego abrir `http://localhost:8080` en el navegador.
 > crearbd empresa
 > usar empresa
 > agregar empleados ana 30000
-> agregar empleados juan 25000
+> agregar empleados pepito 25000
 > ver empleados
 > guardar
 ```

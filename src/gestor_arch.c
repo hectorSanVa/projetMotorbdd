@@ -1,6 +1,7 @@
 #include "gestor_arch.h"
 #include "transaccion.h"
 #include "parser.h"
+#include "indice.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -67,6 +68,8 @@ int existe_tabla(const char *tabla) {
         return 0;
     }
     while (fgets(linea, MAX_LINEA, fp)) {
+        linea[strcspn(linea, "\n")] = 0;
+        if (linea[0] == '#' || strlen(linea) == 0) continue;
         char tabla_arch[MAX_CAMPO];
         sscanf(linea, "%[^:]", tabla_arch);
         if (strcmp(tabla_arch, tabla) == 0) {
@@ -140,8 +143,35 @@ int buscar_registro(const char *tabla, const char *clave, Registro *reg) {
         return -1;
     }
     
+    TablaIndice *indice = indice_obtener_global();
+    long offset = indice_buscar(indice, tabla, clave);
+    
+    if (offset >= 0) {
+        fseek(fp, offset, SEEK_SET);
+        if (fgets(linea, MAX_LINEA, fp)) {
+            linea[strcspn(linea, "\n")] = 0;
+            char tabla_arch[MAX_CAMPO], clave_arch[MAX_CAMPO], tipo[2], valor[MAX_VALOR];
+            if (sscanf(linea, "%[^:]:%[^:]:%[^:]:%[^\n]", tabla_arch, clave_arch, tipo, valor) >= 4) {
+                if (strcmp(tabla_arch, tabla) == 0 && strcmp(clave_arch, clave) == 0) {
+                    strcpy(reg->nombre, tabla);
+                    strcpy(reg->clave, clave);
+                    reg->tipo = (tipo[0] == 'i') ? TIPO_ENTERO : TIPO_TEXTO;
+                    if (reg->tipo == TIPO_ENTERO) {
+                        reg->valor.entero = atoi(valor);
+                    } else {
+                        strcpy(reg->valor.texto, valor);
+                    }
+                    fclose(fp);
+                    return 1;
+                }
+            }
+        }
+    }
+    
+    rewind(fp);
     while (fgets(linea, MAX_LINEA, fp)) {
         linea[strcspn(linea, "\n")] = 0;
+        if (linea[0] == '#' || strlen(linea) == 0) continue;
         
         char tabla_arch[MAX_CAMPO], clave_arch[MAX_CAMPO], tipo[2], valor[MAX_VALOR];
         if (sscanf(linea, "%[^:]:%[^:]:%[^:]:%[^\n]", tabla_arch, clave_arch, tipo, valor) >= 4) {
@@ -178,6 +208,13 @@ int modificar_registro(const char *tabla, const char *clave, const char *nuevo_v
     temp[0] = '\0';
     
     while (fgets(linea, MAX_LINEA, fp)) {
+        linea[strcspn(linea, "\n")] = 0;
+        if (linea[0] == '#' || strlen(linea) == 0) {
+            strcat(temp, linea);
+            strcat(temp, "\n");
+            continue;
+        }
+        
         char tabla_arch[MAX_CAMPO], clave_arch[MAX_CAMPO];
         sscanf(linea, "%[^:]:%[^:]", tabla_arch, clave_arch);
         
@@ -190,6 +227,7 @@ int modificar_registro(const char *tabla, const char *clave, const char *nuevo_v
             encontrado = 1;
         }
         strcat(temp, linea);
+        strcat(temp, "\n");
     }
     fclose(fp);
     
@@ -219,6 +257,13 @@ int borrar_registro(const char *tabla, const char *clave) {
     temp[0] = '\0';
     
     while (fgets(linea, MAX_LINEA, fp)) {
+        linea[strcspn(linea, "\n")] = 0;
+        if (linea[0] == '#' || strlen(linea) == 0) {
+            strcat(temp, linea);
+            strcat(temp, "\n");
+            continue;
+        }
+        
         char tabla_arch[MAX_CAMPO], clave_arch[MAX_CAMPO];
         sscanf(linea, "%[^:]:%[^:]", tabla_arch, clave_arch);
         
@@ -227,6 +272,7 @@ int borrar_registro(const char *tabla, const char *clave) {
             continue;
         }
         strcat(temp, linea);
+        strcat(temp, "\n");
     }
     fclose(fp);
     

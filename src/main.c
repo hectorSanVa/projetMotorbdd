@@ -1,53 +1,37 @@
 #include "definiciones.h"
 #include "parser.h"
 #include "gestor_arch.h"
-#include "servidor.h"
 #include "procesos.h"
+#include "indice.h"
 
 void mostrar_banner();
 void iniciar_sistema();
 
-static int modo_servidor = 0;
-
 int main(int argc, char *argv[]) {
-    if (argc > 1 && strcmp(argv[1], "--web") == 0) {
-        modo_servidor = 1;
-    }
+    iniciar_sistema();
     
-    if (!modo_servidor) {
-        iniciar_sistema();
-    } else {
-        printf("=== MiniDB Transaccional v1.0 ===\n");
-        printf("=== Modo Servidor Web ===\n\n");
-        iniciar_archivo();
-    }
+    char entrada[MAX_LINEA];
     
-    if (modo_servidor) {
-        iniciar_servidor_http(PUERTO_HTTP);
-    } else {
-        char entrada[MAX_LINEA];
+    while (1) {
+        printf("MiniDB[%s]> ", obtener_bd_actual());
+        fflush(stdout);
         
-        while (1) {
-            printf("MiniDB> ");
-            fflush(stdout);
-            
-            if (fgets(entrada, MAX_LINEA, stdin) == NULL) {
-                break;
-            }
-            
-            entrada[strcspn(entrada, "\n")] = 0;
-            
-            if (strlen(entrada) == 0) {
-                continue;
-            }
-            
-            procesar_comando(entrada);
-            printf("%s", obtener_salida());
-            fflush(stdout);
+        if (fgets(entrada, MAX_LINEA, stdin) == NULL) {
+            break;
         }
         
-        printf("\nHasta luego.\n");
+        entrada[strcspn(entrada, "\n")] = 0;
+        
+        if (strlen(entrada) == 0) {
+            continue;
+        }
+        
+        procesar_comando(entrada);
+        printf("%s", obtener_salida());
+        fflush(stdout);
     }
+    
+    printf("\nHasta luego.\n");
     
     return 0;
 }
@@ -66,4 +50,7 @@ void mostrar_banner() {
 void iniciar_sistema() {
     mostrar_banner();
     iniciar_archivo();
+    TablaIndice *indice = indice_obtener_global();
+    indice_inicializar(indice, obtener_bd_actual());
+    indice_construir(indice);
 }
