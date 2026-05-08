@@ -300,10 +300,51 @@ body::before {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .terminal-header { padding: 10px 12px; }
-  .input-bar { padding: 10px 12px; }
-  .terminal-body { padding: 12px; }
-  .welcome-text { font-size: 11px; }
+  .terminal-header { padding: 8px 12px; }
+  .terminal-title { font-size: 11px; }
+  .input-bar { padding: 8px 12px; gap: 6px; }
+  .prompt-label { font-size: 12px; }
+  .prompt-symbol { font-size: 12px; }
+  #cmd-input { padding: 8px 10px; font-size: 13px; }
+  .terminal-body { padding: 10px; }
+  .welcome-text { font-size: 10px; }
+  .cmd-line { font-size: 12px; line-height: 1.5; }
+  .welcome-box { padding: 10px; }
+}
+
+@media (max-width: 480px) {
+  .terminal-header { padding: 6px 8px; }
+  .window-controls { gap: 6px; }
+  .window-btn { width: 10px; height: 10px; }
+  .terminal-title { display: none; }
+  .input-bar { padding: 6px 8px; gap: 4px; flex-wrap: wrap; }
+  .prompt-group { width: 100%; margin-bottom: 6px; }
+  .prompt-label { font-size: 11px; }
+  #cmd-input { padding: 8px; font-size: 12px; }
+  .terminal-body { padding: 8px; }
+  .welcome-text { font-size: 9px; }
+  .cmd-line { font-size: 11px; line-height: 1.4; }
+  .welcome-box { padding: 8px; margin-bottom: 10px; }
+  .welcome-box { border-radius: 4px; }
+  .footer-info { font-size: 9px; gap: 8px; }
+}
+
+@media (max-width: 360px) {
+  .prompt-label { font-size: 10px; }
+  .prompt-symbol { font-size: 10px; }
+  #cmd-input { padding: 6px 8px; font-size: 11px; }
+  .term-input { padding: 4px 6px; }
+}
+
+@media (hover: none) {
+  #cmd-input:active { border-color: var(--accent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Selection */
