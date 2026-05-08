@@ -1,0 +1,410 @@
+================================================================================
+                    MINIDB - MANUAL TÉCNICO DETALLADO
+================================================================================
+
+ÍNDICE:
+--------
+1. Visión General del Proyecto
+2. Componentes del Sistema
+3. Terminal (C) - Funcionamiento Completo
+4. Web (JavaScript) - Funcionamiento Completo
+5. Archivo por Archivo (Explicación Jerárquica)
+6. Flujo de Ejecución
+7. Formato de Datos
+8. Comandos Disponibles
+
+================================================================================
+                    1. VISIÓN GENERAL DEL PROYECTO
+================================================================================
+
+MiniDB es un sistema de gestión de bases de datos transaccional desarrollado
+en lenguaje C, con una interfaz web en JavaScript.
+
+Posee dos versiones:
+- TERMINAL (C): Motor completo con persistencia en archivos
+- WEB (JS): Interfaz para desplegar en la nube (Netlify/Vercel)
+
+Ambas versiones comparten los mismos comandos y funcionalidad base.
+
+================================================================================
+                    2. COMPONENTES DEL SISTEMA
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           MINIDB                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Versión Terminal (C)              │  Versión Web (JavaScript)               │
+│  ─────────────────────            │  ─────────────────────              │
+│  ├── main.c                      │  ├── index.html                       │
+│  ├── parser.c/h                  │  │   ├── Motor JS                      │
+│  ├── gestor_arch.c/h            │  │   ├── Interfaz UI                  │
+│  ├── transaccion.c/h             │  │   └── Comandos                     │
+│  ├── indice.c/h                  │  ├── netlify.toml                    │
+│  ├── procesos.c/h               └──────────────────────────────────────────┘
+│  └── definiciones.h             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    3. TERMINAL (C) - FUNCIONAMIENTO COMPLETO
+================================================================================
+
+3.1 FLUJO DE EJECUCIÓN
+---------------------
+
+Cuando ejecutas `./minidb`:
+
+1. main.c inicia el sistema
+   ↓
+2. Se carga la base de datos por defecto (tienda)
+   ↓
+3. índice se construye desde el archivo .idx
+   ↓
+4. Bucle infinito espera comandos
+   ↓
+5. parser.c procesa cada entrada
+   ↓
+6. Se ejecuta la acción对应ada
+   ↓
+7. Resultado se muestra en pantalla
+
+3.2 ARQUITECTURA DE ARCHIVOS (C)
+------------------------------
+
+main.c
+  └── Punto de entrada. Muestra banner, inicia sistema, bucle de comandos.
+      └── Llama a parser.c para procesar cada input del usuario.
+
+parser.c
+  └── Analiza comandos del usuario.
+      ├── Detecta comando (crearbd, usar, agregar, etc.)
+      ├── Valida argumentos
+      └── Llama a funciones对应adas en gestor_arch.c o transaccion.c
+
+gestor_arch.c
+  └── CRUD real en archivos de texto.
+      ├── escribir_registro() → Escribe al archivo .db
+      ├── leer_todos() → Lee todos los registros
+      ├── modificar_registro() → Modifica registro existente
+      ├── borrar_registro() → Elimina registro
+      └── crear_tabla_en_bd() → Crea marca de tabla (#tabla:new:0)
+
+transaccion.c/h
+  └── Manejo de transacciones ACID.
+      ├── txn_iniciar() → BACKUP en memoria
+      ├── txn_guardar() → COMMIT (escribe a disco)
+      └── txn_cancelar() → ROLLBACK (restaura backup)
+
+indice.c/h
+  └── Sistema de índice hash (256 buckets).
+      ├── indice_construir() → Lee BD y crea índice
+      ├── indice_insertar() → Agrega al índice
+      ├── indice_buscar() → Busca posición rápida
+      └── indice_eliminar() → Remove del índice
+
+procesos.c/h
+  └── Manejo de procesos y señales.
+      ├── configurar_senales() → SIGINT/SIGTERM
+      └── realizar_backup() → Backup manual
+
+3.3 PERSISTENCIA DE DATOS
+----------------------
+
+Los datos se guardan en: data/<nombre>.db
+
+Formato de línea de datos:
+  tabla:clave:t:valor     ← Texto
+  tabla:clave:i:valor     ← Entero
+
+Formato de línea de tabla:
+  #tabla:new:0          ← Definición de tabla ( Metadata)
+
+Ejemplo contenido de data/empresa.db:
+  #empleados:new:0
+  empleados:pepito:i:50000
+  empleados:maria:i:45000
+  departamentos:rh:t:Recursos Humanos
+
+3.4 ÍNDICES
+----------
+
+Cada base de datos tiene un archivo de índice: data/<nombre>.idx
+
+Estructura: Hash table con 256 buckets.
+- bucket 0-255: listas de (clave → offset)
+- Búsqueda O(1) promedio
+
+El índice se reconstruye automáticamente al cambiar de BD.
+
+================================================================================
+                    4. WEB (JAVASCRIPT) - FUNCIONAMIENTO COMPLETO
+================================================================================
+
+4.1 ARQUITECTURA
+--------------
+
+index.html contiene todo:
+- UI (HTML/CSS) - Diseño estilo IDE Tokyo Night
+- Motor JS - MiniDB implementado en JavaScript
+- Comandos - Mismos que la versión C
+
+4.2 FLUJO DE EJECUCIÓN
+--------------------
+
+1. Navegador carga index.html
+   ↓
+2. Motor JavaScript inicializa variables en memoria
+   ↓
+3. Usuario escribe comando en input
+   ↓
+4. JavaScript procesa comando
+   ↓
+5. Resultado se muestra en pantalla
+
+4.3 DIFERENCIAS CON TERMINAL
+----------------------
+
+| Característica      | Terminal (C)      | Web (JS)           |
+|-----------------|------------------|-------------------|
+| Persistencia     | Archivos .db       | Memoria JS         |
+| Índices        | Hash 256 buckets  | No aplica        |
+| Señales        | SIGINT/SIGTERM   | No aplica        |
+| Fork           | Sí              | No aplica        |
+| Despliegue     | Local           | Netlify/Vercel   |
+
+4.4 IMPORTANTE
+------------
+
+Los datos en la versión web se pierden al:
+- Recargar la página
+- Cerrar el navegador
+- Cambiar de URL
+
+Para datos persistentes en web, se necesitaría:
+- localStorage del navegador
+- Backend remoto (otro servidor)
+
+================================================================================
+                    5. ARCHIVO POR ARCHIVO (EXPLICACIÓN JERÁRQUICA)
+================================================================================
+
+5.1 ARCHIVOS DEL PROYECTO
+------------------------
+
+📁 src/
+│
+├── 📄 main.c
+│   │
+│   └── Punto de entrada del programa CLI.
+│       - Muestra banner (ASCII art)
+│       - Inicia sistema de archivos
+│       - Bucle infinito: lee entrada → procesa → muestra resultado
+│       - Controla señales (SIGINT para salir)
+│
+├── 📄 parser.c / parser.h
+│   │
+│   └── Analizador de comandos.
+│       ├── procesar_comando() - Router principal
+│       ├── cambiar_bd() - Cambia base de datos activa
+│       ├── obtener_bd_actual() - Retorna BD actual
+│       ├── parsear_crearbd() - Crea nueva BD
+│       ├── parsear_usar() - Cambia a otra BD
+│       ├── parsear_agregar() - Inserta registro
+│       ├── parsear_ver() - Lee registros
+│       ├── parsear_modificar() - Modifica registro
+│       ├── parsear_borrar() - Elimina registro
+│       ├── parsear_creartabla() - Crea tabla
+│       ├── parsear_listar_tablas() - Lista tablas
+│       ├── parsear_mostrarbd() - Lista todas las BD
+│       ├── parsear_infobd() - Info de BD actual
+│       ├── parsear_limpiar() - Limpia BD actual
+│       └── Alias de comandos (inglés/español)
+│
+├── 📄 gestor_arch.c / gestor_arch.h
+│   │
+│   └── Gestor de archivos (CRUD).
+│       ├── obtener_ruta_bd() - Genera ruta data/<bd>.db
+│       ├── escribir_registro() - Escribe al archivo
+│       ├── leer_todos() - Lee todos los registros de una tabla
+│       ├── buscar_registro() - Busca un registro específico
+│       ├── modificar_registro() - Modifica registro
+│       ├── borrar_registro() - Elimina registro
+│       ├── crear_tabla_en_bd() - Crea marca de tabla
+│       └── existe_tabla() - Verifica si tabla existe
+│
+├── 📄 transaccion.c / transaccion.h
+│   │
+│   └── Manejador de transacciones ACID.
+│       ├── txn_iniciar() - BACKUP en memoria
+│       ├── txn_guardar() - COMMIT: escribe cambios
+│       ├── txn_cancelar() - ROLLBACK: restaura backup
+│       ├── txn_activa() - Verifica si hay txn activa
+│       └── txn_agregar_cambio() - Registra cambio en buffer
+│
+├── 📄 indice.c / indice.h
+│   │
+│   └── Índice hash (256 buckets).
+│       ├── indice_inicializar() - Prepara índice
+│       ├── indice_construir() - Lee BD y crea índice
+│       ├── indice_insertar() - Agrega entrada
+│       ├── indice_buscar() - Busca posición por clave
+│       ├── indice_eliminar() - Remove entrada
+│       ├── indice_guardar() - Guarda a disco
+│       └── indice_liberar() - Libera memoria
+│
+├── 📄 procesos.c / procesos.h
+│   │
+│   └── Manejo de procesos y señales.
+│       ├── configurar_senales() - Configura SIGINT/SIGTERM
+│       └── realizar_backup() - Backup manual
+│
+└── 📄 definiciones.h
+    │
+    └── Tipos, constantes y estructuras.
+        ├── MAX_LINEA, MAX_CAMPO, MAX_VALOR
+        ├── Registro (struct)
+        ├── TipoDato (enum)
+        ├── EstadoTransaccion (enum)
+        └── GestorTransaccion (struct)
+
+📁 root/
+│
+├── 📄 index.html
+│   │
+│   └── Interfaz web completa.
+│       ├── Estilos CSS (Tokyo Night)
+│       ├── Estructura HTML
+│       ├── Motor MiniDB en JavaScript
+│       ├── Comandos (igual que C)
+│       └── Diseño responsive
+│
+├── 📄 netlify.toml
+│   │
+│   └── Configuración para Netlify.
+│       └── [build] publish = "."
+│
+└── 📄 Makefile
+    │
+    └── Compilación del proyecto.
+        ├── all → compila todo
+        ├── run → ejecuta CLI
+        ├── clean → limpia ejecutable
+        └── test → ejecuta pruebas
+
+================================================================================
+                    6. FLUJO DE EJECUCIÓN (EJEMPLO COMPLETO)
+================================================================================
+
+Ejemplo: Crear base de datos y agregar registros
+----------------------------------------------
+
+1. ./minidb                          → main.c inicia
+2. crearbd empresa                    → parser.c detecta comando
+3. USAR empresa                     → parser.c llama cambiar_bd()
+4. creartabla empleados             → gestor_arch.c escribe #empleados:new:0
+5. agregar empleados pepito 50000   → gestor_arch.c escribe
+6. ver empleados                  → gestor_arch.c lee y muestra
+
+Código en cada paso:
+---------------
+main.c:
+  while(1) {
+    printf("MiniDB[%s]> ", obtener_bd_actual());
+    gets(entrada);
+    procesar_comando(entrada);
+  }
+
+parser.c:
+  if (strcmp(comando, "crearbd") == 0) {
+    crear archivo data/<nombre>.db
+  }
+
+gestor_arch.c:
+  fprintf(fp, "%s:%s:i:%s\n", tabla, clave, valor);
+  // escribe: empleados:pepito:i:50000
+
+================================================================================
+                    7. FORMATO DE DATOS
+================================================================================
+
+7.1 ARCHIVO DE BASE DE DATOS (.db)
+--------------------------------
+
+Sintaxis: tabla:clave:t:valor    (texto)
+         tabla:clave:i:valor    (entero)
+
+Ejemplo:
+  empleados:pepito:i:50000
+  empleados:maria:i:45000
+  departamentos:rh:t:Recursos Humanos
+
+7.2 DEFINICIÓN DE TABLA
+--------------------
+
+Sintaxis: #nombre_tabla:new:0
+
+Ejemplo:
+  #empleados:new:0
+  #productos:new:0
+
+7.3 ÍNDICE (.idx)
+-----------------
+
+Formato binario/texto:
+  bucket:clave:offset
+
+================================================================================
+                    8. COMANDOS DISPONIBLES
+================================================================================
+
+8.1 GESTIÓN DE BASES DE DATOS
+--------------------------
+
+| Comando      | Alias              | Descripción              |
+|-------------|-------------------|------------------------|
+| CREARBD     | creardb, newdb     | Crea nueva BD           |
+| MOSTRARBD   | showdb, listadb   | Lista todas las BD       |
+| USAR       | usedb             | Cambia a otra BD       |
+| ELIMINARBD | dropdb, deletedb   | Elimina BD             |
+| INFOBD     | status, info     | Info de BD actual      |
+
+8.2 GESTIÓN DE TABLAS
+--------------------
+
+| Comando     | Alias           | Descripción          |
+|-------------|-----------------|---------------------|
+| CREARTABLA | newtable        | Crea tabla           |
+| LISTAR     | tables          | Lista tablas         |
+| CREAR TABLA| (natural)      | Alias natural        |
+
+8.3 OPERACIONES CRUD
+------------------
+
+| Comando    | Alias                    | Descripción              |
+|------------|-------------------------|------------------------|
+| AGREGAR   | insert, add               | Agrega registro         |
+| VER       | select, read, select *    | Ve registros            |
+| MODIFICAR | update, modify           | Modifica registro       |
+| BORRAR    | delete, remove           | Elimina registro        |
+
+8.4 TRANSACCIONES
+---------------
+
+| Comando  | Alias              | Descripción           |
+|----------|-------------------|---------------------|
+| INICIAR  | begin, start, txn | Inicia transacción |
+| GUARDAR  | commit, save     | Confirma cambios    |
+| CANCELAR | rollback, abort  | Revierte cambios   |
+
+8.5 UTILIDADES
+-------------
+
+| Comando  | Alias             | Descripción              |
+|----------|------------------|------------------------|
+| LIMPIAR  | clear, reset     | Limpia BD actual       |
+| BACKUP   | dump, export    | Backup manual         |
+| AYUDA    | help, ?         | Muestra ayuda         |
+| SALIR    | (ninguno)       | Sale del programa     |
+
+================================================================================
+                              FIN DEL MANUAL
+================================================================================
