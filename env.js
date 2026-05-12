@@ -1,3 +1,3 @@
 window.ENV = {
-  API_URL: window.ENV?.API_URL || '/api/command'
+  API_URL: 'https://projetmotorbdd.onrender.com/api/command'
 };
