@@ -381,8 +381,8 @@ body::before {
     <div class="terminal-content">
       <div class="welcome-box">
         <div class="welcome-text">┌──────────────────────────────────────────────────────────────────┐
-│  MiniDB Transaccional v1.0 (JavaScript)                    │
-│  Sistema de Gestión de Bases de Datos en el Navegador      │
+│  MiniDB Transaccional v1.0 (Motor C + Node.js API)          │
+│  Sistema de Gestión de Bases de Datos con API Server        │
 │  Escribe 'ayuda' para ver la lista de comandos disponibles  │
 └──────────────────────────────────────────────────────────────────┘</div>
       </div>
@@ -399,326 +399,9 @@ body::before {
   </div>
 </div>
 
+<script src="/env.js"></script>
 <script>
-const MiniDB = (() => {
-  let bdActual = 'tienda';
-  let basesDatos = {};
-  let transaccionActiva = false;
-  let backupTransaccion = null;
-  
-  if (!basesDatos[bdActual]) basesDatos[bdActual] = { tablas: {} };
-  
-  const out = (text) => text;
-  
-  const comandos = {
-    'ayuda': () => `╔══════════════════════════════════════════════════════════╗
-║  Comandos Disponibles                                      ║
-╠══════════════════════════════════════════════════════════╣
-║  Bases de Datos:                                        ║
-║    CREARBD <nombre>   - Crear nueva base de datos       ║
-║    ELIMINARBD <nombre> - Eliminar base de datos        ║
-║    MOSTRARBD         - Listar todas las BDs              ║
-║    USAR <nombre>     - Cambiar a otra BD              ║
-║    INFOBD            - Info de la BD actual             ║
-╠══════════════════════════════════════════════════════════╣
-║  Tablas:                                              ║
-║    CREARTABLA <nombre> - Crear tabla                    ║
-║    LISTAR            - Listar tablas                  ║
-╠══════════════════════════════════════════════════════════╣
-║  Registros:                                           ║
-║    AGREGAR <t> <c> <v>  - Agregar registro            ║
-║    VER <tabla>        - Ver registros                ║
-║    MODIFICAR <t> <c> <v> - Modificar registro       ║
-║    BORRAR <t> <c>     - Borrar registro             ║
-╠══════════════════════════════════════════════════╣
-║  Transacciones:                                       ║
-║    INICIAR           - Iniciar transacción         ║
-║    GUARDAR           - Confirmar (COMMIT)          ║
-║    CANCELAR          - Revertir (ROLLBACK)           ║
-╠══════════════════════════════════════════════════╣
-║  Utilidades:                                          ║
-║    LIMPIAR           - Limpiar BD actual           ║
-║    SALIR             - Salir                       ║
-╚══════════════════════════════════════════════════════════╝`,
-
-    'crearbd': (args) => {
-      if (args.length < 1) return '[ERROR] Uso: CREARBD <nombre>';
-      const nombre = args[0].toLowerCase();
-      if (basesDatos[nombre]) return '[ERROR] La base de datos ya existe';
-      basesDatos[nombre] = { tablas: {} };
-      return `[OK] Base de datos '${nombre}' creada`;
-    },
-    
-    'eliminarbd': (args) => {
-      if (args.length < 1) return '[ERROR] Uso: ELIMINARBD <nombre>';
-      const nombre = args[0].toLowerCase();
-      if (nombre === bdActual) return '[ERROR] No puedes eliminar la BD en uso';
-      if (!basesDatos[nombre]) return '[ERROR] La base de datos no existe';
-      delete basesDatos[nombre];
-      return `[OK] Base de datos '${nombre}' eliminada`;
-    },
-    
-    'mostrarbd': () => {
-      let r = '╔══════════════════════════════════╗\n';
-      r += '║  Bases de Datos               ║\n';
-      r += '╠══════════════════════════════════╣\n';
-      const bds = Object.keys(basesDatos);
-      bds.forEach(bd => {
-        const prefix = bd === bdActual ? '▶' : ' ';
-        const suffix = bd === bdActual ? ' (actual)' : '';
-        r += `║  ${prefix} ${bd.padEnd(20)}${suffix.padEnd(14)}║\n`;
-      });
-      r += '╚══════════════════════════════════╝';
-      return r;
-    },
-    
-    'usar': (args) => {
-      if (args.length < 1) return '[ERROR] Uso: USAR <nombre>';
-      const nombre = args[0].toLowerCase();
-      const anterior = bdActual;
-      
-      if (!basesDatos[nombre]) basesDatos[nombre] = { tablas: {} };
-      
-      bdActual = nombre;
-      actualizarPrompt();
-      
-      const tablas = Object.keys(obtenerBD().tablas);
-      let r = `[OK] Cambiando de '${anterior}' a '${nombre}'\n`;
-      r += '════════════════════════════════════════════\n';
-      r += `  Base de datos activa: ${nombre}\n`;
-      r += `  Tablas: ${tablas.length}\n`;
-      r += '════════════════════════════════════════════\n\n';
-      r += '--- Tablas ---\n';
-      if (tablas.length === 0) r += '(No hay tablas)\n';
-      else {
-        tablas.forEach(t => {
-          const regs = Object.keys(basesDatos[nombre].tablas[t] || {}).length;
-          r += `  - ${t} (${regs} registros)\n`;
-        });
-      }
-      return r;
-    },
-    
-    'infobd': () => {
-      const bd = obtenerBD();
-      const tablas = Object.keys(bd.tablas);
-      let regs = 0;
-      tablas.forEach(t => regs += Object.keys(bd.tablas[t] || {}).length);
-      return `════════════════════════════════════
-  Base de Datos: ${bdActual}
-  Tablas: ${tablas.length}
-  Registros: ${regs}
-════════════════════════════════════`;
-    },
-    
-'creartabla': (args) => {
-      if (args.length < 1) return '[ERROR] Uso: CREARTABLA <nombre>';
-      const tabla = args[0].toLowerCase();
-      const bd = obtenerBD();
-      if (bd.tablas[tabla]) return '[OK] Tabla \'' + tabla + '\' ya existe';
-      bd.tablas[tabla] = {};
-      return '[OK] Tabla \'' + tabla + '\' creada';
-    },
-    
-    'droptabla': (args) => {
-      if (args.length < 1) return '[ERROR] Uso: DROPTABLA <nombre>';
-      const tabla = args[0].toLowerCase();
-      const bd = obtenerBD();
-      if (!bd.tablas[tabla]) return '[ERROR] La tabla no existe';
-      delete bd.tablas[tabla];
-      return '[OK] Tabla \'' + tabla + '\' eliminada';
-    },
-    
-    'listar': () => {
-      const bd = obtenerBD();
-      const tablas = Object.keys(bd.tablas);
-      let r = '--- Tablas en [' + bdActual + '] ---\n';
-      if (tablas.length === 0) r += '(No hay tablas)\n';
-      else {
-        tablas.forEach(t => {
-          const regs = Object.keys(bd.tablas[t]).length;
-          r += `  - ${t} (${regs} registros)\n`;
-        });
-      }
-      return r;
-    },
-    
-    'agregar': (args) => {
-      if (args.length < 3) return '[ERROR] Uso: AGREGAR <tabla> <clave> <valor>';
-      const tabla = args[0].toLowerCase();
-      const clave = args[1];
-      const valor = args.slice(2).join(' ');
-      const bd = obtenerBD();
-      if (!bd.tablas[tabla]) return '[ERROR] La tabla no existe';
-      if (bd.tablas[tabla][clave]) return '[ERROR] Ya existe el registro ' + tabla + ':' + clave;
-      bd.tablas[tabla][clave] = valor;
-      return '[OK] Registro agregado: ' + tabla + ':' + clave + ' = ' + valor;
-    },
-    
-    'ver': (args) => {
-      if (args.length === 0) {
-        const bd = obtenerBD();
-        const tablas = Object.keys(bd.tablas);
-        let r = '--- Tablas en [' + bdActual + '] ---\n';
-        if (tablas.length === 0) r += '(No hay tablas)\n';
-        else {
-          tablas.forEach(t => {
-            const regs = Object.keys(bd.tablas[t]).length;
-            r += '  - ' + t + ' (' + regs + ' registros)\n';
-          });
-        }
-        return r;
-      }
-      const tabla = args[0].toLowerCase();
-      const bd = obtenerBD();
-      if (!bd.tablas[tabla]) return '[ERROR] La tabla no existe';
-      const regs = bd.tablas[tabla];
-      let r = '--- Tabla: ' + tabla + ' [' + bdActual + '] ---\n';
-      r += 'CLAVE              | VALOR                    | TIPO\n';
-      r += '───────────────────────────────────────────\n';
-      const keys = Object.keys(regs);
-      if (keys.length === 0) r += '(Sin registros)\n';
-      else {
-        keys.forEach(k => {
-          const v = regs[k];
-          const tipo = /^-?\d+$/.test(v) ? 'INT' : 'TXT';
-          r += k.padEnd(18) + ' | ' + v.padEnd(22) + ' | ' + tipo + '\n';
-        });
-      }
-      r += '--- Total: ' + keys.length + ' registros ---';
-      return r;
-    },
-    
-    'modificar': (args) => {
-      if (args.length < 3) return '[ERROR] Uso: MODIFICAR <tabla> <clave> <valor>';
-      const tabla = args[0].toLowerCase();
-      const clave = args[1];
-      const valor = args.slice(2).join(' ');
-      const bd = obtenerBD();
-      if (!bd.tablas[tabla]) return '[ERROR] La tabla no existe';
-      if (!bd.tablas[tabla][clave]) return '[ERROR] No existe: ' + tabla + ':' + clave;
-      bd.tablas[tabla][clave] = valor;
-      return '[OK] Modificado: ' + tabla + ':' + clave + ' = ' + valor;
-    },
-    
-    'borrar': (args) => {
-      if (args.length < 2) return '[ERROR] Uso: BORRAR <tabla> <clave>';
-      const tabla = args[0].toLowerCase();
-      const clave = args[1];
-      const bd = obtenerBD();
-      if (!bd.tablas[tabla]) return '[ERROR] La tabla no existe';
-      if (!bd.tablas[tabla][clave]) return '[ERROR] No existe: ' + tabla + ':' + clave;
-      delete bd.tablas[tabla][clave];
-      return '[OK] Borrado: ' + tabla + ':' + clave;
-    },
-    
-    'iniciar': () => {
-      if (transaccionActiva) return '[WARN] Transacción ya activa';
-      backupTransaccion = JSON.stringify(obtenerBD());
-      transaccionActiva = true;
-      return '[TXN] Transacción iniciada (backup en memoria)';
-    },
-    
-    'guardar': () => {
-      if (!transaccionActiva) return '[WARN] No hay transacción activa';
-      transaccionActiva = false;
-      let cambios = 0;
-      const actual = obtenerBD();
-      const backup = JSON.parse(backupTransaccion);
-      Object.keys(actual.tablas).forEach(t => {
-        Object.keys(actual.tablas[t]).forEach(k => {
-          if (JSON.stringify(backup.tablas[t]) !== JSON.stringify(actual.tablas[t])) cambios++;
-        });
-      });
-      backupTransaccion = null;
-      return '[TXN] Confirmado (COMMIT) - ' + cambios + ' cambios';
-    },
-    
-    'cancelar': () => {
-      if (!transaccionActiva) return '[WARN] No hay transacción activa';
-      const bd = obtenerBD();
-      bd.tablas = JSON.parse(backupTransaccion).tablas;
-      transaccionActiva = false;
-      backupTransaccion = null;
-      return '[TXN] Transacción cancelada (ROLLBACK)';
-    },
-    
-    'limpiar': () => {
-      const bd = obtenerBD();
-      bd.tablas = {};
-      return '[OK] Base de datos "' + bdActual + '" limpiada';
-    },
-    
-    'salir': () => '[INFO] Saliendo de MiniDB...'
-  };
-  
-  const obtenerBD = () => basesDatos[bdActual];
-  
-  const procesarUnComando = (input) => {
-    const esCrearTabla = input.toLowerCase().startsWith('crear tabla');
-    if (esCrearTabla) {
-      const nombre = input.substring(12).trim().toLowerCase();
-      if (!nombre) return '[ERROR] Uso: crear tabla <nombre>';
-      const bd = obtenerBD();
-      if (bd.tablas[nombre]) return '[OK] Tabla \'' + nombre + '\' ya existe';
-      bd.tablas[nombre] = {};
-      return '[OK] Tabla \'' + nombre + '\' creada';
-    }
-    
-    const tokens = input.trim().split(/\s+/);
-    if (tokens.length === 0) return '';
-    let cmd = tokens[0].toLowerCase();
-    const args = tokens.slice(1);
-    
-    const aliases = {
-      // Bases de datos
-      'creardb': 'crearbd', 'newdb': 'crearbd',
-      'dropdb': 'eliminarbd', 'deletedb': 'eliminarbd',
-      'showdb': 'mostrarbd', 'listadb': 'mostrarbd', 'show databases': 'mostrarbd',
-      'usedb': 'usar',
-      
-      // Tablas
-      'newtable': 'creartabla', 'show tables': 'listar', 'show tables': 'listar',
-      'drop table': 'droptabla',
-      
-      // Registros
-      'insert': 'agregar', 'add': 'agregar', 'insert into': 'agregar',
-      'select': 'ver', 'read': 'ver', 'select *': 'ver',
-      'update': 'modificar', 'modify': 'modificar',
-      'delete': 'borrar', 'remove': 'borrar', 'delete from': 'borrar',
-      
-      // Transacciones
-      'begin': 'iniciar', 'start': 'iniciar', 'txn': 'iniciar',
-      'commit': 'guardar', 'save': 'guardar',
-      'rollback': 'cancelar', 'abort': 'cancelar',
-      
-      // Utilidades
-      'clear': 'limpiar', 'reset': 'limpiar',
-      'help': 'ayuda', '?': 'ayuda',
-      'describe': 'infobd', 'desc': 'infobd'
-    };
-    
-    if (aliases[cmd]) cmd = aliases[cmd];
-    if (comandos[cmd]) return comandos[cmd](args);
-    return '[ERROR] Comando desconocido: ' + tokens[0];
-  };
-  
-  const procesarComando = (input) => {
-    const partes = input.trim().split(';').map(s => s.trim()).filter(s => s.length > 0);
-    let resultado = '';
-    partes.forEach((cmd, i) => {
-      if (i > 0) resultado += '\n';
-      resultado += procesarUnComando(cmd);
-    });
-    return resultado;
-  };
-  
-  const actualizarPrompt = () => {
-    document.getElementById('input-bd').textContent = '[' + bdActual + ']';
-  };
-  
-  return { procesarComando, actualizarPrompt };
-})();
+const API_URL = window.ENV?.API_URL || '/api/command';
 
 const terminalLines = document.getElementById('terminal-lines');
 const form = document.getElementById('cmd-form');
@@ -726,25 +409,39 @@ const input = document.getElementById('cmd-input');
 let historial = [];
 let historialIndex = -1;
 
-form.onsubmit = function(e) {
+async function enviarComando(cmd) {
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: cmd })
+    });
+    const data = await response.json();
+    return data.result || data.error || '';
+  } catch (err) {
+    return '[ERROR] No se pudo conectar al servidor: ' + err.message;
+  }
+}
+
+form.onsubmit = async function(e) {
   e.preventDefault();
   const cmd = input.value.trim();
   if (!cmd) return;
-  
+
   historial.push(cmd);
   historialIndex = historial.length;
   addCommandLine(cmd);
-  
-  const resultado = MiniDB.procesarComando(cmd);
+
+  const resultado = await enviarComando(cmd);
   if (resultado) {
     addOutputLine(resultado);
   }
-  
+
   if (cmd.toLowerCase() === 'salir') {
     input.disabled = true;
     input.placeholder = 'Sesión terminada. Recarga la página para continuar.';
   }
-  
+
   input.value = '';
   scrollToBottom();
 };
