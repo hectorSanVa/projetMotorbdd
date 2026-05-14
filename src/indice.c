@@ -120,7 +120,7 @@ void indice_guardar(TablaIndice *indice) {
     FILE *fp = fopen(ruta, "w");
     if (!fp) return;
     
-    fprintf(fp, "# MiniDB Index - BD: %s\n", indice->nombre_bd);
+    fprintf(fp, "# HeVi Index - BD: %s\n", indice->nombre_bd);
     
     for (int i = 0; i < INDICE_HASH_SIZE; i++) {
         EntradaIndice *entrada = indice->tablas[i];

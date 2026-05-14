@@ -15,9 +15,9 @@ int main(int argc, char *argv[]) {
     while (1) {
         const char *bd = obtener_bd_actual();
         if (strlen(bd) > 0) {
-            printf("MiniDB[%s]> ", bd);
+            printf("HeVi[%s]> ", bd);
         } else {
-            printf("MiniDB> ");
+            printf("HeVi> ");
         }
         fflush(stdout);
         
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 
 void mostrar_banner() {
     printf("╔══════════════════════════════════╗\n");
-    printf("║   MiniDB Transaccional v1.0     ║\n");
+    printf("║   HeVi Transaccional v1.0       ║\n");
     printf("║   Sistema de Bases de Datos     ║\n");
     printf("╚══════════════════════════════════╝\n\n");
     printf("BD: crearbd, eliminarbd, mostrarbd, usar, infobd, listar\n");

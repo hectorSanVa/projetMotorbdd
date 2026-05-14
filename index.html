@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MiniDB - Terminal</title>
+<title>HeVi - Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -362,13 +362,13 @@ body::before {
       <div class="window-btn minimize"></div>
       <div class="window-btn maximize"></div>
     </div>
-    <span class="terminal-title">MiniDB - Base de Datos Transaccional</span>
+    <span class="terminal-title">HeVi - Base de Datos Transaccional</span>
     <div style="width: 52px"></div>
   </div>
   
   <div class="input-bar">
     <div class="prompt-group">
-      <span class="prompt-label">MiniDB</span>
+      <span class="prompt-label">HeVi</span>
       <span class="prompt-label db" id="input-bd"></span>
       <span class="prompt-symbol">$</span>
     </div>
@@ -381,7 +381,7 @@ body::before {
     <div class="terminal-content">
       <div class="welcome-box">
         <div class="welcome-text">┌──────────────────────────────────────────────────────────────────┐
-│  MiniDB Transaccional v1.0 (Motor C + Node.js API)          │
+│  HeVi Transaccional v1.0 (Motor C + Node.js API)          │
 │  Sistema de Gestión de Bases de Datos con API Server        │
 │  Escribe 'ayuda' para ver la lista de comandos disponibles  │
 └──────────────────────────────────────────────────────────────────┘</div>
@@ -468,7 +468,7 @@ input.addEventListener('keydown', function(e) {
 function addCommandLine(cmd) {
   const div = document.createElement('div');
   div.className = 'cmd-line input-line';
-  div.innerHTML = '<span class="prompt-block"><span class="prompt-text">MiniDB</span><span class="prompt-text db">[' + document.getElementById('input-bd').textContent + ']</span><span class="prompt-text">$</span></span> <span class="cmd-text">' + escapeHtml(cmd) + '</span>';
+  div.innerHTML = '<span class="prompt-block"><span class="prompt-text">HeVi</span><span class="prompt-text db">[' + document.getElementById('input-bd').textContent + ']</span><span class="prompt-text">$</span></span> <span class="cmd-text">' + escapeHtml(cmd) + '</span>';
   terminalLines.appendChild(div);
 }
 
