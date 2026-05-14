@@ -1,7 +1,7 @@
 {
-  "name": "minidb-api",
+  "name": "HeVi-api",
   "version": "1.0.0",
-  "description": "API Node.js para MiniDB - Motor de base de datos en C",
+  "description": "API Node.js para HeVi - Motor de base de datos en C",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

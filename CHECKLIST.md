@@ -1,4 +1,4 @@
-# MiniDB - Checklist del Proyecto
+# HeVi - Checklist del Proyecto
 
 ## Estado: COMPLETADO ✅
 
@@ -132,7 +132,7 @@ ProjectBdd/
 
 ### Terminal (C)
 ```bash
-./minidb
+./HeVi
 # o
 make run
 

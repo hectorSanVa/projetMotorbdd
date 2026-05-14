@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -pthread
 LDFLAGS = -pthread
 
-TARGET = minidb
+TARGET = HeVi
 SRC = src/main.c src/parser.c src/gestor_arch.c src/transaccion.c src/procesos.c src/indice.c
 
 all: $(TARGET)

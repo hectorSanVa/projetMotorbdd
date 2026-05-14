@@ -1,4 +1,4 @@
-# MiniDB - Motor de Base de Datos Transaccional
+# HeVi - Motor de Base de Datos Transaccional
 
 Base de datos transaccional desarrollada en C que implementa conceptos fundamentales de sistemas operativos y bases de datos.
 
@@ -33,7 +33,7 @@ make
 ### Modo servidor web
 
 ```bash
-./minidb --web
+./HeVi --web
 ```
 
 Luego abrir `http://localhost:8080` en el navegador.
@@ -87,7 +87,7 @@ Luego abrir `http://localhost:8080` en el navegador.
 ### Uso básico
 
 ```
-./minidb
+./HeVi
 > crearbd empresa
 > usar empresa
 > agregar empleados ana 30000

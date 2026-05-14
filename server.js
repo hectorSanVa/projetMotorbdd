@@ -23,37 +23,37 @@ app.post('/api/command', (req, res) => {
     return res.status(400).json({ error: 'Comando requerido' });
   }
 
-  const minidbPath = path.join(__dirname, 'minidb');
+  const heviPath = path.join(__dirname, 'HeVi');
 
-  const minidb = spawn(minidbPath);
+  const hevi = spawn(heviPath);
 
   let output = '';
   let errorOutput = '';
 
-  minidb.stdout.on('data', (data) => {
+  hevi.stdout.on('data', (data) => {
     output += data.toString();
   });
 
-  minidb.stderr.on('data', (data) => {
+  hevi.stderr.on('data', (data) => {
     errorOutput += data.toString();
   });
 
-  minidb.on('close', (code) => {
+  hevi.on('close', (code) => {
     if (code !== 0 && errorOutput) {
       return res.status(500).json({ error: errorOutput });
     }
     res.json({ result: output });
   });
 
-  minidb.on('error', (err) => {
-    res.status(500).json({ error: 'Error al ejecutar minidb: ' + err.message });
+  hevi.on('error', (err) => {
+    res.status(500).json({ error: 'Error al ejecutar HeVi: ' + err.message });
   });
 
-  minidb.stdin.write(command + '\nSALIR\n');
-  minidb.stdin.end();
+  hevi.stdin.write(command + '\nSALIR\n');
+  hevi.stdin.end();
 });
 
 app.listen(PORT, () => {
-  console.log(`MiniDB API corriendo en http://localhost:${PORT}`);
+  console.log(`HeVi API corriendo en http://localhost:${PORT}`);
   console.log(`Abre http://localhost:${PORT}/index.html para usar la interfaz`);
 });
