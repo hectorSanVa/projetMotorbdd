@@ -15,7 +15,7 @@ GestorTransaccion txn_actual = {ESTADO_ESPERA, 0, false};
 char global_salida[8192];
 char *buffer_salida = NULL;
 int tamano_buffer = 0;
-static char bd_actual[MAX_CAMPO] = "tienda";
+static char bd_actual[MAX_CAMPO] = "";
 
 const char* obtener_bd_actual() {
     return bd_actual;

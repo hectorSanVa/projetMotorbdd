@@ -13,7 +13,12 @@ int main(int argc, char *argv[]) {
     char entrada[MAX_LINEA];
     
     while (1) {
-        printf("MiniDB[%s]> ", obtener_bd_actual());
+        const char *bd = obtener_bd_actual();
+        if (strlen(bd) > 0) {
+            printf("MiniDB[%s]> ", bd);
+        } else {
+            printf("MiniDB> ");
+        }
         fflush(stdout);
         
         if (fgets(entrada, MAX_LINEA, stdin) == NULL) {
