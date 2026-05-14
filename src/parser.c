@@ -6,6 +6,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 int parsear_creartabla(char *entrada);
 
@@ -438,17 +440,27 @@ int parsear_crearbd(char *entrada) {
         return -1;
     }
     
+    struct stat st = {0};
+    if (stat("data", &st) == -1) {
+        mkdir("data", 0755);
+    }
+    
     char ruta[MAX_CAMPO * 2];
     snprintf(ruta, sizeof(ruta), "data/%s.db", nombre_bd);
     
-    FILE *fp = fopen(ruta, "a");
+    if (access(ruta, F_OK) == 0) {
+        out("[ERROR] La base de datos '%s' ya existe\n", nombre_bd);
+        return -1;
+    }
+    
+    FILE *fp = fopen(ruta, "w");
     if (fp) {
         fclose(fp);
         out("[OK] Base de datos '%s' creada\n", nombre_bd);
         return 1;
     }
     
-    out("[ERROR] No se pudo crear la base de datos\n");
+    out("[ERROR] No se pudo crear la base de datos (permisos o espacio)\n");
     return -1;
 }
 
